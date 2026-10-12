@@ -1,17 +1,23 @@
 name: test
 
-# Manual trigger only. Run from the Actions tab or via
-# `gh workflow run test`. The release workflow still fires on tag push.
 on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-D warnings"
 
+permissions:
+  contents: read
+
 jobs:
   fmt:
     name: rustfmt
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +28,7 @@ jobs:
 
   clippy:
     name: clippy
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,6 +41,7 @@ jobs:
 
   test:
     name: nextest + mpv
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +61,7 @@ jobs:
 
   coverage:
     name: coverage (report only)
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -68,12 +77,12 @@ jobs:
       - name: Generate coverage report
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
       - name: Generate HTML report
-        run: cargo llvm-cov --all-features --workspace --html
+        run: cargo llvm-cov report --html
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: https://gitea.com/actions/upload-artifact@c24449f33cd45d4826c6702db7e49f7cdb9b551d
         with:
           name: coverage-html
           path: target/llvm-cov/html/
           retention-days: 30
       - name: Print coverage summary
-        run: cargo llvm-cov --all-features --workspace --summary-only
+        run: cargo llvm-cov report --summary-only
