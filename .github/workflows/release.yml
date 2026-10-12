@@ -9,8 +9,16 @@ permissions:
   contents: write
 
 jobs:
+  qualify-source:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test.yml
+
   build-and-release:
+    needs: qualify-source
+    if: github.server_url == 'https://github.com'
     name: Build static musl binaries and create release
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
